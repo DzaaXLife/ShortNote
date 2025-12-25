@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ShortNote - Intelligent Notebook</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #3b82f6;
+            --primary-dark: #2563eb;
+            --danger: #ef4444;
+            --danger-bg: #fee2e2;
+            --success: #22c55e;
+            --bg-body: #f9fafb;
+            --bg-card: #ffffff;
+            --bg-ai: #f3f4f6;
+            --text-main: #111827;
+            --text-secondary: #6b7280;
+            --border: #e5e7eb;
+            --radius: 12px;
+            --radius-sm: 8px;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', sans-serif; }
+        body { background: var(--bg-card); color: var(--text-main); height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
+
+        
+        .system-bar { background: #1f2937; color: #d1d5db; padding: 8px 16px; font-size: 0.75rem; display: flex; justify-content: space-between; align-items: center; }
+        .app-header { padding: 16px 20px 0; background: white; border-bottom: 1px solid var(--border); }
+        .logo-row { display: flex; align-items: center; gap: 8px; font-weight: 700; font-size: 1.25rem; color: var(--primary); margin-bottom: 24px; }
+        .view-controls { display: flex; justify-content: space-between; align-items: center; padding-bottom: 16px; }
+        .view-title { font-size: 1.25rem; font-weight: 700; color: #111827; }
+        .action-group { display: flex; gap: 10px; }
+
+        
+        .btn { padding: 8px 16px; border-radius: 6px; font-size: 0.9rem; font-weight: 500; cursor: pointer; display: flex; align-items: center; gap: 6px; border: 1px solid transparent; transition: 0.2s; }
+        .btn-outline { background: white; border: 1px solid var(--border); color: #374151; }
+        .btn-primary { background: var(--primary); color: white; }
+        .btn-danger { background: var(--danger); color: white; }
+        .btn:disabled { opacity: 0.6; cursor: not-allowed; }
+
+        
+        #main-container { flex: 1; overflow-y: auto; padding: 20px; background: white; }
+
+        
+        .note-card { background: white; border: 1px solid var(--border); border-radius: var(--radius); padding: 20px; margin-bottom: 16px; position: relative; cursor: pointer; transition: transform 0.1s; }
+        .note-card:hover { transform: translateY(-2px); border-color: var(--primary); }
+        .note-date { font-size: 0.75rem; color: var(--text-secondary); margin-bottom: 12px; display: block; }
+        .note-preview { font-size: 0.9rem; color: #4b5563; line-height: 1.5; margin-bottom: 16px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+        .tag-pill { background: #eff6ff; color: var(--primary); padding: 4px 10px; border-radius: 100px; font-size: 0.75rem; font-weight: 500; margin-right: 5px; }
+        .ai-badge { position: absolute; top: 20px; right: 20px; color: var(--success); font-size: 1.2rem; }
+
+        
+        #editor-title { font-size: 1.75rem; font-weight: 800; border: none; outline: none; width: 100%; margin-bottom: 10px; color: var(--text-main); }
+        #editor-body { width: 100%; min-height: 50vh; border: none; outline: none; resize: none; font-size: 1.1rem; line-height: 1.7; color: #374151; }
+        
+        
+        .editor-tag-container { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 24px; padding-bottom: 16px; border-bottom: 1px solid var(--bg-body); }
+        .tag-input { border: none; outline: none; font-size: 0.9rem; min-width: 150px; }
+
+        
+        .ai-section { margin-top: 40px; border-top: 2px solid var(--bg-ai); padding-top: 24px; }
+        .ai-header { display: flex; align-items: center; gap: 8px; font-weight: 700; margin-bottom: 20px; color: var(--success); }
+        .ai-card { background: var(--bg-ai); border-radius: var(--radius); padding: 20px; margin-bottom: 16px; }
+        .ai-card-title { font-weight: 600; font-size: 0.9rem; text-transform: uppercase; color: var(--text-secondary); margin-bottom: 12px; letter-spacing: 0.05em; }
+        .key-points-list { list-style: none; }
+        .key-points-list li { display: flex; gap: 12px; margin-bottom: 10px; font-size: 0.95rem; line-height: 1.5; }
+        .dot { width: 8px; height: 8px; background: var(--success); border-radius: 50%; margin-top: 7px; flex-shrink: 0; }
+
+        
+        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.4); backdrop-filter: blur(2px); display: none; justify-content: center; align-items: center; z-index: 1000; }
+        .modal { background: white; width: 90%; max-width: 400px; border-radius: 16px; padding: 32px; text-align: center; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1); }
+        .success-icon { color: var(--success); background: #dcfce7; width: 64px; height: 64px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 20px; }
+        
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        .modal-overlay { animation: fadeIn 0.2s ease-out; }
+    </style>
+</head>
+<body>
+
+    <div class="system-bar">
+        <span>ShortNote Pro v2.5</span>
+        <div id="status-clock">22:35</div>
+    </div>
+
+    <header class="app-header">
+        <div class="logo-row">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/></svg>
+            ShortNote
+        </div>
+        <div class="view-controls" id="header-controls"></div>
+    </header>
+
+    <main id="main-container"></main>
+
+    <div id="save-modal" class="modal-overlay">
+        <div class="modal">
+            <div class="success-icon">
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg>
+            </div>
+            <h2 style="margin-bottom:8px;">Saved!</h2>
+            <p style="color:var(--text-secondary);">Your note has been synchronized.</p>
+        </div>
+    </div>
+
+    <div id="delete-modal" class="modal-overlay">
+        <div class="modal">
+            <div style="color:var(--danger); background:var(--danger-bg); width:64px; height:64px; border-radius:50%; display:flex; align-items:center; justify-content:center; margin:0 auto 20px;">
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>
+            </div>
+            <h2 style="margin-bottom:8px;">Delete Note?</h2>
+            <p style="color:var(--text-secondary); margin-bottom:24px;">This cannot be undone.</p>
+            <div style="display:flex; flex-direction:column; gap:10px;">
+                <button class="btn btn-outline" style="justify-content:center" onclick="closeModal('delete-modal')">Cancel</button>
+                <button class="btn btn-danger" style="justify-content:center" onclick="confirmDelete()">Delete Permanently</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        
+        const GEMINI_MODEL = "gemini-2.5-flash-preview-09-2025";
+        const API_KEY = "AIzaSyDcVKkj4TVuAmi5gjhdwnjBb0vRICXd1Zs";
+        const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${API_KEY}`;
+
+
+        let notes = JSON.parse(localStorage.getItem('shortnotes_db')) || [];
+        let activeNoteId = null;
+        let currentView = 'list';
+
+        
+        function renderHeader() {
+            const container = document.getElementById('header-controls');
+            if (currentView === 'list') {
+                container.innerHTML = `
+                    <div class="view-title">All Notes</div>
+                    <div class="action-group">
+                        <button class="btn btn-outline" onclick="createNew()">+ New Note</button>
+                        <button class="btn btn-primary" onclick="alert('Select a note to process')">Process AI</button>
+                    </div>
+                `;
+            } else {
+                container.innerHTML = `
+                    <div class="view-title">Editor</div>
+                    <div class="action-group">
+                        <button class="btn btn-outline" onclick="goHome()">Back</button>
+                        <button class="btn btn-primary" id="process-btn" onclick="processWithGemini()">Process Note</button>
+                    </div>
+                `;
+            }
+        }
+
+        function goHome() { currentView = 'list'; renderList(); }
+
+        
+        function renderList() {
+            renderHeader();
+            const main = document.getElementById('main-container');
+            if (notes.length === 0) {
+                main.innerHTML = `<div style="text-align:center; padding:50px; color:var(--text-secondary);">No notes yet. Click "+ New Note" to start.</div>`;
+                return;
+            }
+            main.innerHTML = notes.map(n => `
+                <div class="note-card" onclick="openNote(${n.id})">
+                    ${n.processed ? '<span class="ai-badge">✦</span>' : ''}
+                    <span class="note-date">${n.date}</span>
+                    <h3>${n.title || 'Untitled'}</h3>
+                    <p class="note-preview">${n.content || 'Empty note...'}</p>
+                    <div>${(n.tags || []).map(t => `<span class="tag-pill">#${t}</span>`).join('')}</div>
+                </div>
+            `).join('');
+        }
+
+        
+        function openNote(id) {
+            currentView = 'editor';
+            activeNoteId = id;
+            const note = notes.find(n => n.id === id);
+            renderHeader();
+            
+            const main = document.getElementById('main-container');
+            main.innerHTML = `
+                <input type="text" id="editor-title" value="${note.title}" placeholder="Note Title...">
+                
+                <div class="editor-tag-container" id="tag-area">
+                    ${(note.tags || []).map(t => `<span class="tag-pill">#${t}</span>`).join('')}
+                    <input type="text" class="tag-input" placeholder="+ Add tag (Enter)" onkeydown="handleAddTag(event)">
+                </div>
+
+                <div class="action-group" style="margin-bottom:24px;">
+                    <button class="btn btn-outline" onclick="saveNote()">Save Changes</button>
+                    <button class="btn btn-danger" onclick="openModal('delete-modal')">Delete</button>
+                </div>
+
+                <textarea id="editor-body" placeholder="Start writing...">${note.content}</textarea>
+                <div id="ai-results-container">${note.processed ? renderAIResults(note.aiData) : ''}</div>
+            `;
+        }
+
+        
+        function handleAddTag(e) {
+            if (e.key === 'Enter' && e.target.value.trim()) {
+                const note = notes.find(n => n.id === activeNoteId);
+                const newTag = e.target.value.trim().replace('#', '');
+                if (!note.tags.includes(newTag)) {
+                    note.tags.push(newTag);
+                    openNote(activeNoteId); 
+                }
+                e.target.value = '';
+            }
+        }
+
+async function processWithGemini() {
+    const note = notes.find(n => n.id === activeNoteId);
+    const content = document.getElementById('editor-body').value;
+    if (!content) return alert("Add some content first!");
+
+    const btn = document.getElementById('process-btn');
+    btn.disabled = true;
+    btn.innerText = "Analyzing...";
+
+    try {
+        const response = await fetch('/api/generate', {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ content })
+        });
+
+        const data = await response.json();
+        const jsonText = data.candidates[0].content.parts[0].text.replace(/```json|```/g, "");
+        const result = JSON.parse(jsonText);
+
+        note.processed = true;
+        note.aiData = result;
+        note.tags = [...new Set([...note.tags, ...result.tags])];
+        
+        saveNote(false);
+        openNote(activeNoteId);
+    } catch (err) {
+        console.error(err);
+        alert("AI Processing Error.");
+    } finally {
+        btn.disabled = false;
+        btn.innerText = "Process Note";
+    }
+}
+
+        function renderAIResults(data) {
+            return `
+                <div class="ai-section">
+                    <div class="ai-header">✦ Gemini Intelligence</div>
+                    <div class="ai-card">
+                        <div class="ai-card-title">Summary</div>
+                        <p>${data.summary}</p>
+                    </div>
+                    <div class="ai-card">
+                        <div class="ai-card-title">Key Insights</div>
+                        <ul class="key-points-list">
+                            ${data.keyPoints.map(kp => `<li><div class="dot"></div>${kp}</li>`).join('')}
+                        </ul>
+                    </div>
+                </div>
+            `;
+        }
+
+        
+        function createNew() {
+            const newNote = { id: Date.now(), title: "", content: "", tags: [], processed: false, date: new Date().toLocaleDateString() };
+            notes.unshift(newNote);
+            openNote(newNote.id);
+        }
+
+        function saveNote(showModal = true) {
+            const note = notes.find(n => n.id === activeNoteId);
+            note.title = document.getElementById('editor-title').value;
+            note.content = document.getElementById('editor-body').value;
+            localStorage.setItem('shortnotes_db', JSON.stringify(notes));
+            if (showModal) {
+                openModal('save-modal');
+                setTimeout(() => closeModal('save-modal'), 2000);
+            }
+        }
+
+        function confirmDelete() {
+            notes = notes.filter(n => n.id !== activeNoteId);
+            localStorage.setItem('shortnotes_db', JSON.stringify(notes));
+            closeModal('delete-modal');
+            goHome();
+        }
+
+        
+        function openModal(id) { document.getElementById(id).style.display = 'flex'; }
+        function closeModal(id) { document.getElementById(id).style.display = 'none'; }
+        
+        
+        setInterval(() => {
+            document.getElementById('status-clock').innerText = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        }, 1000);
+
+        renderList();
+    </script>
+</body>
+</html>
