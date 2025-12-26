@@ -120,10 +120,6 @@
 
     <script>
         
-        const GEMINI_MODEL = "gemini-2.5-flash-preview-09-2025";
-        const API_KEY = "AIzaSyDcVKkj4TVuAmi5gjhdwnjBb0vRICXd1Zs";
-        const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${API_KEY}`;
-
 
         let notes = JSON.parse(localStorage.getItem('shortnotes_db')) || [];
         let activeNoteId = null;
